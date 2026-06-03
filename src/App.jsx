@@ -7,27 +7,25 @@ import SyllabusComparePage from './pages/SyllabusComparePage';
 
 function App() {
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-white flex flex-col">
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <div className="min-h-screen bg-white flex flex-col font-sans">
         
         <Navbar />
         
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            {/* ODKRYWCA (Ranking) */}
             <Route path="/wyniki" element={<SearchResultsPage />} />
-            <Route path="/uczelnia" element={<UniversityDetailsPage />} />
+            {/* ZDECYDOWANY (Szczegóły) */}
             <Route path="/sylabusy" element={<SyllabusComparePage />} />
+            <Route path="/uczelnia" element={<UniversityDetailsPage />} />
           </Routes>
         </main>
 
-        {/* Zmieniono na border-gray-100, aby linia była ledwie widoczna */}
-        <footer className="h-20 border-t border-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">
-          © 2026 ERASMO — Wszystkie prawa zastrzeżone
-        </footer>
       </div>
     </BrowserRouter>
-  )
+  );
 }
 
 export default App;
