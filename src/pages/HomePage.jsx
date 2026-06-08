@@ -25,8 +25,8 @@ export default function HomePage() {
       <section className="w-full max-w-6xl mx-auto px-4 md:px-12 pt-16 pb-20 flex flex-col items-center">
         <div className="text-center flex flex-col items-center mb-10">
           <span className="text-purple-600 text-[10px] font-black tracking-[0.2em] uppercase mb-4">Twój kompas na Erasmusie</span>
-          <h1 className="text-5xl md:text-[3.5rem] font-black text-gray-900 leading-[1.1] tracking-tight max-w-3xl">
-            Zorganizuj swój wyjazd<br />bez zbędnego stresu.
+          <h1 className="text-5xl md:text-[3.0rem] font-black text-gray-900 leading-[1.1] tracking-tight max-w-3xl">
+            ZORGANIZUJ SWÓJ WYJAZD<br />BEZ ZBĘDNEGO STRESU
           </h1>
         </div>
 

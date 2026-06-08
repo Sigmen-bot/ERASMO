@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+// Upewnij się, że nazwa pliku z logo się zgadza z Twoim folderem assets!
 import logoSvg from '../assets/Logo1.svg'; 
 
 export default function Navbar() {
@@ -23,10 +24,9 @@ export default function Navbar() {
           />
         </Link>
 
+        {/* Prawy panel nawigacji - czysty, bez pytajnika */}
         <div className="flex items-center h-full">
-          <button className="text-2xl font-black text-gray-300 hover:text-black transition-colors px-4 py-2">
-            ?
-          </button>
+          {/* Miejsce gotowe na przyszłe przyciski (np. "Zaloguj się" lub "Wersja EN") */}
         </div>
         
       </div>

@@ -12,7 +12,6 @@ GROQ_API_KEY = ""
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 groq_client = Groq(api_key=GROQ_API_KEY)
 
-# Używamy potężnego modelu Llama 3.3 (70 miliardów parametrów), zoptymalizowanego pod logikę i JSON
 MODEL_NAME = "llama-3.3-70b-versatile"
 
 def uruchom_kalkulacje():
@@ -24,27 +23,36 @@ def uruchom_kalkulacje():
     zagranica_przedmioty = [p for p in wszystkie if p['uczelnia_nazwa'] != 'UEK']
     uczelnie_zagr = set([p['uczelnia_nazwa'] for p in zagranica_przedmioty])
 
-    # Pobieramy to, co już wyliczyliśmy (żeby nie robić tego dwa razy!)
-    print("🔍 Sprawdzam, co już zostało wyliczone (omijanie duplikatów)...")
-    dopasowania_resp = supabase.table("dopasowania").select("przedmiot_pl_id").execute()
-    wyliczone_id = set([d['przedmiot_pl_id'] for d in dopasowania_resp.data])
-
-    przedmioty_do_zrobienia = [p for p in uek_przedmioty if p['id'] not in wyliczone_id]
+    print("🔍 Analizuję dotychczasowe dopasowania (aby unikać duplikatów dla danej uczelni)...")
+    # Pobieramy pary: który polski przedmiot został przypisany do którego zagranicznego
+    dopasowania_resp = supabase.table("dopasowania").select("przedmiot_pl_id, przedmiot_zagr_id").execute()
     
-    print(f"📊 Stan bazy: {len(wyliczone_id)} gotowych. Zostało do wyliczenia: {len(przedmioty_do_zrobienia)} przedmiotów.\n")
-
-    if not przedmioty_do_zrobienia:
-        print("🎉 Wszystkie przedmioty zostały już wyliczone! Baza jest pełna.")
-        return
+    # Tworzymy słownik: ID przedmiotu zagranicznego -> Nazwa jego uczelni
+    id_do_uczelni = {p['id']: p['uczelnia_nazwa'] for p in zagranica_przedmioty}
+    
+    # Tworzymy zbiór GOTOWYCH PAR: (ID_polskiego_przedmiotu, Nazwa_Uczelni_Zagranicznej)
+    zrobione_pary = set()
+    for d in dopasowania_resp.data:
+        zagr_id = d.get('przedmiot_zagr_id')
+        if zagr_id in id_do_uczelni:
+            zrobione_pary.add((d['przedmiot_pl_id'], id_do_uczelni[zagr_id]))
 
     ROZMIAR_PACZKI = 10
 
     for uczelnia in uczelnie_zagr:
-        print(f"==============\n🏫 ROZPOCZYNAM ANALIZĘ: {uczelnia}\n==============")
+        print(f"\n==============\n🏫 ROZPOCZYNAM ANALIZĘ: {uczelnia}\n==============")
         oferta_zagraniczna = [p for p in zagranica_przedmioty if p['uczelnia_nazwa'] == uczelnia]
         zagr_paczka = [{"id": p['id'], "nazwa": p['przedmiot_en'], "ects": p['ects']} for p in oferta_zagraniczna]
 
-        # Pętla dzieli TYLKO te przedmioty, których jeszcze nie ma w bazie
+        # POPRAWKA LOGICZNA: Bierzemy te przedmioty UEK, których jeszcze NIE MA w zrobionych parach dla TEJ uczelni
+        przedmioty_do_zrobienia = [p for p in uek_przedmioty if (p['id'], uczelnia) not in zrobione_pary]
+
+        if not przedmioty_do_zrobienia:
+            print(f"✅ Uczelnia {uczelnia} jest już w pełni policzona. Pomijam.")
+            continue
+            
+        print(f"📊 Do wyliczenia: {len(przedmioty_do_zrobienia)} polskich przedmiotów dla uczelni {uczelnia}.")
+
         for i in range(0, len(przedmioty_do_zrobienia), ROZMIAR_PACZKI):
             chunk_uek = przedmioty_do_zrobienia[i:i + ROZMIAR_PACZKI]
             uek_paczka = [{"id": p['id'], "nazwa": p['przedmiot_pl'], "ects": p['ects']} for p in chunk_uek]
@@ -77,16 +85,13 @@ def uruchom_kalkulacje():
             
             while not sukces:
                 try:
-                    # Zapytanie do Groq (Llama 3)
                     chat_completion = groq_client.chat.completions.create(
                         messages=[{"role": "user", "content": prompt}],
                         model=MODEL_NAME,
-                        temperature=0.1 # Niska temperatura = mniej halucynacji, więcej precyzji
+                        temperature=0.1
                     )
                     
                     wynik_tekst = chat_completion.choices[0].message.content
-                    
-                    # Czyszczenie z ewentualnych znaczników markdown
                     tekst_json = wynik_tekst.replace('```json', '').replace('```', '').strip()
                     gotowe_dopasowania = json.loads(tekst_json)
                     
@@ -96,7 +101,6 @@ def uruchom_kalkulacje():
                     
                     sukces = True 
                     
-                    # Krótki oddech dla serwerów Groq
                     print("⏳ Czekam 4 sekundy przed kolejną paczką...\n")
                     time.sleep(4)
                     
@@ -110,7 +114,7 @@ def uruchom_kalkulacje():
                         time.sleep(65)
                     else:
                         print(f"❌ Niespodziewany błąd: {e}")
-                        sukces = True # Zabezpieczenie przed nieskończoną pętlą błędu krytycznego
+                        sukces = True 
 
 if __name__ == "__main__":
     uruchom_kalkulacje()
