@@ -204,7 +204,7 @@ const SyllabusComparePage = () => {
                           onClick={() => setIsPremium(true)}
                           className="w-full bg-gradient-to-r from-[#2470ff] to-[#a420eb] text-white font-black uppercase tracking-widest py-4 px-8 rounded-xl hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
                         >
-                          Zapłać 19,99 PLN (Demo)
+                          Zapłać 29,99 PLN (Demo)
                         </button>
                         
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-4">
